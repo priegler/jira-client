@@ -19,9 +19,12 @@
 
 package net.rcarz.jiraclient;
 
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
+import java.util.TimeZone;
 
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
@@ -80,7 +83,7 @@ public class WorkLog extends Resource {
      * @throws JiraException when the retrieval fails
      */
     public static WorkLog get(RestClient restclient, String issue, String id)
-        throws JiraException {
+            throws JiraException {
 
         JSON result = null;
 
@@ -94,6 +97,56 @@ public class WorkLog extends Resource {
             throw new JiraException("JSON payload is malformed");
 
         return new WorkLog(restclient, (JSONObject)result);
+    }
+
+    /**
+     * Retrieves the given work log record.
+     *
+     * @param restclient REST client instance
+     * @param issue Internal JIRA ID of the associated issue
+     * @param id Internal JIRA ID of the work log
+     *
+     * @return a work log instance
+     *
+     * @throws JiraException when the retrieval fails
+     */
+    public static WorkLog create(RestClient restclient, User author, String issue, String description, Date timeStarted, int timeSpentSeconds)
+            throws JiraException {
+
+        JSON result = null;
+        JSONObject req = new JSONObject();
+        //req.put("author", "todo");
+        addDefaultVisibility(req);
+        req.put("comment", description);
+        addTimeStarted(req, timeStarted);
+        //req.put("started", timeStarted.); // 2016-05-18T12:19:04.126+0000
+        req.put("timeSpentSeconds", timeSpentSeconds); // 12000
+        //req.put("author", author.getName());
+        try {///rest/api/2/issue/{issueIdOrKey}/worklog
+            result = restclient.post(getBaseUri() + "issue/" + issue + "/worklog", req);
+        } catch (Exception ex) {
+            throw new JiraException("Failed to create work log on issue " + issue, ex);
+        }
+
+        if (!(result instanceof JSONObject))
+            throw new JiraException("JSON payload is malformed");
+
+        return new WorkLog(restclient, (JSONObject)result);
+    }
+
+    private static void addTimeStarted(JSONObject req, Date timeStarted) {
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+        df.setTimeZone(tz);
+        String nowAsISO = df.format(timeStarted);
+        req.put("started", nowAsISO);
+    }
+
+    private static void addDefaultVisibility(JSONObject req) {
+        JSONObject vis = new JSONObject();
+        vis.put("type", "group");
+        vis.put("value", "jira-users"); //TODO:
+        req.put("visibility", vis);
     }
 
     @Override
