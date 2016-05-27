@@ -22,18 +22,29 @@ package net.rcarz.jiraclient;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.http.client.HttpClient;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+
+import javax.security.cert.CertificateException;
+import javax.security.cert.X509Certificate;
 
 /**
  * A simple JIRA REST client.
@@ -64,7 +75,10 @@ public class JiraClient {
     	PoolingClientConnectionManager connManager = new PoolingClientConnectionManager();
         connManager.setDefaultMaxPerRoute(20);
         connManager.setMaxTotal(40);
+
         HttpClient httpclient = new DefaultHttpClient(connManager);
+        noSslCheck(httpclient); //TODO: workaround for self signed certificate on our server
+
 
         restclient = new RestClient(httpclient, creds, URI.create(uri));
 
@@ -73,6 +87,31 @@ public class JiraClient {
         	//intialize connection if required
         	creds.initialize(restclient);
         }
+    }
+
+    private void noSslCheck(HttpClient httpclient) {
+        TrustStrategy ts = new TrustStrategy() {
+
+            public boolean isTrusted(java.security.cert.X509Certificate[] x509Certificates, String s) throws java.security.cert.CertificateException {
+                    // Oh, I am easy...
+                    return true;
+            }
+
+        };
+        SSLSocketFactory sslsf = null;
+        try {
+            sslsf = new SSLSocketFactory(ts);
+
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (KeyManagementException e) {
+            e.printStackTrace();
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (UnrecoverableKeyException e) {
+            e.printStackTrace();
+        }
+        httpclient.getConnectionManager().getSchemeRegistry().register(new Scheme("https", 443, sslsf));
     }
 
     /**
