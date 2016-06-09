@@ -103,26 +103,23 @@ public class WorkLog extends Resource {
      * Retrieves the given work log record.
      *
      * @param restclient REST client instance
-     * @param issue Internal JIRA ID of the associated issue
-     * @param id Internal JIRA ID of the work log
+     * @param issue the issue key for that you want to create a worklog entry
+     * @param description the worklog description
+     * @param timeSpentSeconds the time in seconds spent on the worklog
      *
-     * @return a work log instance
+     * @return the work log instance that has been created on the server
      *
      * @throws JiraException when the retrieval fails
      */
-    public static WorkLog create(RestClient restclient, User author, String issue, String description, Date timeStarted, int timeSpentSeconds)
+    public static WorkLog create(RestClient restclient, String issue, String description, Date timeStarted, long timeSpentSeconds)
             throws JiraException {
 
         JSON result = null;
         JSONObject req = new JSONObject();
-        //req.put("author", "todo");
-        addDefaultVisibility(req);
-        req.put("comment", description);
+        req.put(Field.COMMENT, description);
         addTimeStarted(req, timeStarted);
-        //req.put("started", timeStarted.); // 2016-05-18T12:19:04.126+0000
-        req.put("timeSpentSeconds", timeSpentSeconds); // 12000
-        //req.put("author", author.getName());
-        try {///rest/api/2/issue/{issueIdOrKey}/worklog
+        req.put(Field.TIME_SPENT_SECONDS, timeSpentSeconds);
+        try {
             result = restclient.post(getBaseUri() + "issue/" + issue + "/worklog", req);
         } catch (Exception ex) {
             throw new JiraException("Failed to create work log on issue " + issue, ex);
@@ -136,17 +133,10 @@ public class WorkLog extends Resource {
 
     private static void addTimeStarted(JSONObject req, Date timeStarted) {
         TimeZone tz = TimeZone.getTimeZone("UTC");
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+        DateFormat df = new SimpleDateFormat(Field.DATETIME_FORMAT); // "yyyy-MM-dd'T'HH:mm'Z'");
         df.setTimeZone(tz);
         String nowAsISO = df.format(timeStarted);
-        req.put("started", nowAsISO);
-    }
-
-    private static void addDefaultVisibility(JSONObject req) {
-        JSONObject vis = new JSONObject();
-        vis.put("type", "group");
-        vis.put("value", "jira-users"); //TODO:
-        req.put("visibility", vis);
+        req.put(Field.STARTED, nowAsISO);
     }
 
     @Override

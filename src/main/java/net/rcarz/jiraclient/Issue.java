@@ -1680,8 +1680,7 @@ public class Issue extends Resource {
         return Field.getWorkLogs(obj, restclient);
     }
 
-    public WorkLog createWorkLog(User author, String description, Date started, int timeSpentSeconds) throws JiraException {
-        if(author == null) throw new JiraException("No Author provided");
+    public WorkLog createWorkLog(String description, Date started, long timeSpentSeconds) throws JiraException {
         if (restclient == null) throw new JiraException("restclient not initialized");
         if(this.getKey() == null) throw new JiraException("Issue not created yet");
         if(description == null) {
@@ -1690,7 +1689,7 @@ public class Issue extends Resource {
         if(started == null) throw new JiraException("No started Date provided to create WorkLog");
         if(timeSpentSeconds <= 0) throw new JiraException("timeSpentSeconds needs to be greater or equal to 0");
 
-        return WorkLog.create(restclient, author, this.getKey(), description, started, timeSpentSeconds);
+        return WorkLog.create(restclient, this.getKey(), description, started, timeSpentSeconds);
     }
 
     public Integer getTimeSpent() {

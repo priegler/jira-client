@@ -146,9 +146,11 @@ public final class Field {
     public static final String WORKLOG = "worklog";
     public static final String TIME_ESTIMATE = "timeestimate";
     public static final String TIME_SPENT = "timespent";
+    public static final String TIME_SPENT_SECONDS = "timeSpentSeconds";
     public static final String CREATED_DATE = "created";
     public static final String UPDATED_DATE = "updated";
     public static final String TRANSITION_TO_STATUS = "to";
+    public static final String STARTED = "started";
 
     public static final String DATE_FORMAT = "yyyy-MM-dd";
     public static final String DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
