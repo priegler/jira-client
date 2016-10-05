@@ -154,6 +154,7 @@ public final class Field {
 
     public static final String DATE_FORMAT = "yyyy-MM-dd";
     public static final String DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+    public static final String DATETIME_FORMAT_TEMPO = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"; //"YYYY-MM-ddT00:00:00.000+0000";
 
     private Field() { }
 
@@ -254,6 +255,24 @@ public final class Field {
 
         if (d instanceof String) {
             SimpleDateFormat df = new SimpleDateFormat(DATETIME_FORMAT);
+            result = df.parse((String)d, new ParsePosition(0));
+        }
+
+        return result;
+    }
+
+    /**
+     * Gets a date with a time from the given object.
+     *
+     * @param d a string representation of a date
+     *
+     * @return a Date instance or null if d isn't a string
+     */
+    public static Date getTempoDateTime(Object d) {
+        Date result = null;
+
+        if (d instanceof String) {
+            SimpleDateFormat df = new SimpleDateFormat(DATETIME_FORMAT_TEMPO);
             result = df.parse((String)d, new ParsePosition(0));
         }
 
@@ -383,6 +402,30 @@ public final class Field {
     }
 
     /**
+     * Gets a JIRA resource from the given object.
+     *
+     * @param type Resource data type
+     * @param r a JSONObject instance
+     * @param restclient REST client instance
+     *
+     * @return a Resource instance or null if r isn't a JSONObject instance
+     */
+    public static <T extends TempoResource> T getTempoResource(
+            Class<T> type, Object r, RestClient restclient) {
+
+        T result = null;
+
+        if (r instanceof JSONObject && !((JSONObject)r).isNullObject()) {
+            if (type == TempoAuthor.class)
+                result = (T)new TempoAuthor(restclient, (JSONObject)r);
+            else if (type == TempoWorkLog.class)
+                result = (T)new TempoWorkLog(restclient, (JSONObject)r);
+        }
+
+        return result;
+    }
+
+    /**
      * Gets a string from the given object.
      *
      * @param s a String instance
@@ -435,6 +478,31 @@ public final class Field {
         if (ra instanceof JSONArray) {
             for (Object v : (JSONArray)ra) {
                 T item = getResource(type, v, restclient);
+                if (item != null)
+                    results.add(item);
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Gets a list of Tempo resources from the given object.
+     *
+     * @param type Resource data type
+     * @param ra a JSONArray instance
+     * @param restclient REST client instance
+     *
+     * @return a list of Resources found in ra
+     */
+    public static <T extends TempoResource> List<T> getTempoResourceArray(
+            Class<T> type, Object ra, RestClient restclient) {
+
+        List<T> results = new ArrayList<T>();
+
+        if (ra instanceof JSONArray) {
+            for (Object v : (JSONArray)ra) {
+                T item = getTempoResource(type, v, restclient);
                 if (item != null)
                     results.add(item);
             }

@@ -31,8 +31,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.rcarz.jiraclient.util.Logger;
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeSocketFactory;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.TrustStrategy;
@@ -50,6 +52,8 @@ import javax.security.cert.X509Certificate;
  * A simple JIRA REST client.
  */
 public class JiraClient {
+
+    private final static Logger LOGGER = Logger.getLogger(JiraClient.class);
 
     private RestClient restclient = null;
     private String username = null;
@@ -101,7 +105,6 @@ public class JiraClient {
         SSLSocketFactory sslsf = null;
         try {
             sslsf = new SSLSocketFactory(ts);
-
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (KeyManagementException e) {

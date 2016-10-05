@@ -28,6 +28,7 @@ import java.util.*;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.joda.time.DateTime;
 
 /**
  * Represents a JIRA issue.
@@ -555,7 +556,7 @@ public class Issue extends Resource {
 			this.startAt = startAt;
         }
     	
-		@Override
+
 		public boolean hasNext() {
 			if (nextIssue != null) {
 				return true;
@@ -568,7 +569,7 @@ public class Issue extends Resource {
 			return nextIssue != null;
 		}
 
-		@Override
+
 		public Issue next() {
 			if (! hasNext()) {
 				throw new NoSuchElementException();
@@ -579,7 +580,7 @@ public class Issue extends Resource {
 		}
 
 
-		@Override
+
 		public void remove() {
 			throw new UnsupportedOperationException("Method remove() not support for class " + this.getClass().getName());
 		}
@@ -1680,7 +1681,7 @@ public class Issue extends Resource {
         return Field.getWorkLogs(obj, restclient);
     }
 
-    public WorkLog createWorkLog(String description, Date started, long timeSpentSeconds) throws JiraException {
+    public WorkLog createWorkLog(String description, DateTime started, long timeSpentSeconds) throws JiraException {
         if (restclient == null) throw new JiraException("restclient not initialized");
         if(this.getKey() == null) throw new JiraException("Issue not created yet");
         if(description == null) {

@@ -19,14 +19,6 @@
 
 package net.rcarz.jiraclient;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.logging.Level;
-
 import net.rcarz.jiraclient.util.Logger;
 import net.sf.json.JSON;
 import net.sf.json.JSONObject;
@@ -34,21 +26,25 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
+import java.util.Date;
+import java.util.Map;
+import java.util.logging.Level;
+
 /**
  * Represents an issue work log.
  */
-public class WorkLog extends Resource {
+public class TempoWorkLog extends TempoResource {
 
-    private User author = null;
-    private String comment = null;
-    private Date created = null;
-    private Date updated = null;
-    private User updateAuthor = null;
-    private Date started = null;
-
-    private String timeSpent = null;
     private int timeSpentSeconds = 0;
-    private final static Logger LOGGER = Logger.getLogger(WorkLog.class);
+    private Date dateStarted = null; //"2016-07-04T09:35:03.000",
+
+    private String comment = null;
+
+    private TempoAuthor author = null;
+    //private TempoIssue issue = null;
+    private String summary = null;
+
+    private final static Logger LOGGER = Logger.getLogger(TempoWorkLog.class);
 
     public static final String JIRA_DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     public static final DateTimeFormatter JIRA_DATE_TIME_FORMATTER = DateTimeFormat.forPattern(JIRA_DATE_TIME_PATTERN);
@@ -59,7 +55,7 @@ public class WorkLog extends Resource {
      * @param restclient REST client instance
      * @param json JSON payload
      */
-    protected WorkLog(RestClient restclient, JSONObject json) {
+    protected TempoWorkLog(RestClient restclient, JSONObject json) {
         super(restclient);
 
         if (json != null)
@@ -67,17 +63,17 @@ public class WorkLog extends Resource {
     }
 
     private void deserialise(JSONObject json) {
+        LOGGER.log(Level.INFO, "deserialise");
         Map map = json;
-        self = Field.getString(map.get("self"));
-        id = Field.getString(map.get("id"));
-        author = Field.getResource(User.class, map.get("author"), restclient);
-        comment = Field.getString(map.get("comment"));
-        created = Field.getDate(map.get("created"));
-        updated = Field.getDate(map.get("updated"));
-        updateAuthor = Field.getResource(User.class, map.get("updateAuthor"), restclient);
-        started = Field.getDate(map.get("started"));
-        timeSpent = Field.getString(map.get("timeSpent"));
         timeSpentSeconds = Field.getInteger(map.get("timeSpentSeconds"));
+        dateStarted = Field.getTempoDateTime(map.get("dateStarted"));
+        comment = Field.getString(map.get("comment"));
+        self = Field.getString(map.get("self"));
+        id = Field.getInteger(map.get("id"));
+        author = Field.getTempoResource(TempoAuthor.class, map.get("author"), restclient);
+        //issue = Field.getResource(TempoIssue.class, map.get("issue"), restclient);
+        summary = Field.getString(map.get("summary"));
+        LOGGER.log(Level.INFO, "desiri done: " + this.toStringFull());
     }
 
     /**
@@ -91,7 +87,7 @@ public class WorkLog extends Resource {
      *
      * @throws JiraException when the retrieval fails
      */
-    public static WorkLog get(RestClient restclient, String issue, String id)
+    public static TempoWorkLog get(RestClient restclient, String issue, String id)
             throws JiraException {
 
         JSON result = null;
@@ -105,7 +101,7 @@ public class WorkLog extends Resource {
         if (!(result instanceof JSONObject))
             throw new JiraException("JSON payload is malformed");
 
-        return new WorkLog(restclient, (JSONObject)result);
+        return new TempoWorkLog(restclient, (JSONObject)result);
     }
 
     /**
@@ -120,7 +116,7 @@ public class WorkLog extends Resource {
      *
      * @throws JiraException when the retrieval fails
      */
-    public static WorkLog create(RestClient restclient, String issue, String description, DateTime timeStarted, long timeSpentSeconds)
+    public static TempoWorkLog create(RestClient restclient, String issue, String description, DateTime timeStarted, long timeSpentSeconds)
             throws JiraException {
 
         JSON result = null;
@@ -137,31 +133,26 @@ public class WorkLog extends Resource {
         if (!(result instanceof JSONObject))
             throw new JiraException("JSON payload is malformed");
 
-        return new WorkLog(restclient, (JSONObject)result);
+        return new TempoWorkLog(restclient, (JSONObject)result);
     }
 
     private static void addTimeStarted(JSONObject req, DateTime startDate) {
-//        TimeZone tz = TimeZone.getTimeZone("UTC");
-//        DateFormat df = new SimpleDateFormat(Field.DATETIME_FORMAT); // "yyyy-MM-dd'T'HH:mm'Z'");
-//        //df.setTimeZone(tz);
-//        String nowAsISO = df.format(timeStarted);
-
         req.put(Field.STARTED, JIRA_DATE_TIME_FORMATTER.print(startDate));
     }
 
     @Override
     public String toString() {
-        return created + " by " + author;
+        return self;
     }
 
     public String toStringFull() {
-        return created + " by " + author + ", " +
-               "self: " + self + ", id" + id + ", comment: " + comment +
-                "created: " + created + ", updated" + updated + ", updateAuthor: " + updateAuthor +
-                "started: " + started + ", timeSpent" + timeSpent + ", timeSpentSeconds: " + timeSpentSeconds;
+        return "Worklog{author: " + "author" + ", " + ", timeSpentSeconds: " + timeSpentSeconds +
+                ", dateStarted: " + dateStarted + ", comment: " + comment + ", id: " + id +
+                ", issue: " + "issue" + ", summary: " + summary +
+                ", self: " + self + "}";
     }
 
-    public User getAuthor() {
+    public TempoAuthor getAuthor() {
         return author;
     }
 
@@ -169,24 +160,48 @@ public class WorkLog extends Resource {
         return comment;
     }
 
-    public Date getCreatedDate() {
-        return created;
+    public Date getDateStarted() {
+        return dateStarted;
     }
 
-    public User getUpdateAuthor() {
-        return updateAuthor;
+    //public String getIssue() {
+    //    return issue;
+    // }
+
+    public String getSummary() {
+        return summary;
     }
-
-    public Date getUpdatedDate() {
-        return updated;
-    }
-
-    public Date getStarted(){ return started; }
-
-    public String getTimeSpent(){ return timeSpent; }
 
     public int getTimeSpentSeconds() {
         return timeSpentSeconds;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof TempoWorkLog) {
+            TempoWorkLog tempoObj = (TempoWorkLog)obj;
+            if(self != null && self.equals(tempoObj.getSelf())){
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    public boolean isDuplicate(TempoWorkLog obj) {
+        if(timeSpentSeconds == obj.timeSpentSeconds &&
+                saveEqual(dateStarted, obj.dateStarted) &&
+                saveEqual(comment, obj.comment) &&
+                saveEqual(summary, obj.summary) &&
+                saveEqual(author, obj.author)){
+            return true;
+        }
+
+        return false;
+    }
+
+    private static boolean saveEqual(Object obj1, Object obj2){
+        return ((obj1 != null && obj1.equals(obj2)) || (obj1 == null && obj2 == null));
     }
 
 }
